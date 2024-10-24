@@ -1,33 +1,10 @@
 import cv2
-import os
 import numpy as np
-
-def detect_faces(frame):
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5)
-    return faces
-
-def load_known_faces(folder_path):
-    known_face_encodings = []
-    known_face_names = []
-    
-    for filename in os.listdir(folder_path):
-        if filename.endswith('.jpg') or filename.endswith('.png'):
-            image_path = os.path.join(folder_path, filename)
-            image = cv2.imread(image_path)
-            if image is not None:
-                faces = detect_faces(image)
-                if len(faces) > 0:
-                    (x, y, w, h) = faces[0]
-                    face_image = image[y:y+h, x:x+w]
-                    face_encoding = cv2.resize(face_image, (128, 128)).flatten()
-                    known_face_encodings.append(face_encoding)
-                    known_face_names.append(os.path.splitext(filename)[0])
-    return known_face_encodings, known_face_names
+from face_detection import detect_faces
+from face_recognition import load_known_faces, open_matched_image
 
 def main():
-    folder_path = './'  # Replace with your folder path
+    folder_path = './Images'  # Replace with your folder path
     known_face_encodings, known_face_names = load_known_faces(folder_path)
 
     video_capture = cv2.VideoCapture(0)
@@ -58,6 +35,10 @@ def main():
 
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
                 cv2.putText(frame, name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
+                # Open the matched image if found
+                if name != "Unknown":
+                    open_matched_image(folder_path, name)
 
             cv2.imshow('Video', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
